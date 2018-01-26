@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import pypyodbc as pyodbc
 
-connection_string = "Driver={ODBC Driver 13 for SQL Server};Server=tcp:sqldbplatingnum.database.windows.net,1433;Database=cozydb;Uid=platingnum@sqldbplatingnum;Pwd={D0wnl0ad!};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+connection_string = "Driver={ODBC Driver 13 for SQL Server};Server=tcp:abc.database.windows.net,1433;Database=abc;Uid=abc@sqldbplatingnum;Pwd={abc};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
 app = Flask(__name__)
 
 
