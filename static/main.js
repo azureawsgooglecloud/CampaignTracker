@@ -1,19 +1,62 @@
+
 $(document).ready(function() {
 
   var searchData = [];
+  var gotFile = false;
   
+  $('#file-select').change(function(e) {
+
+    var r = confirm("Are you sure you want to upload the file?");
+    if (r == true) {      
+      var file = e.target.files[0];    
+      var form_data = new FormData();
+      form_data.append('file', file);
+      $('#fileuploadspan').text('Uploading file please wait' );
+  
+      $.ajax({
+          url: '/fileupload',
+          timeout: 3000000,
+          cache: false,
+          contentType: false,
+          processData: false,
+          data: form_data,
+          type: 'POST',
+          success: function(response) {                                      
+            if(response.statusCode == "200"){
+              $('#fileuploadspan').text('File uploaded succesfully: ' + response.data);
+              gotFile = true;
+            }
+            else
+              $('#fileuploadspan').text(response.error);
+          },
+          error: function(error) {          
+            $('#fileuploadspan').text(error);          
+          }
+      });    
+    } else {
+      $('#fileuploadspan').text("The upload request was cancelled");
+    }   
+  });
+
+
   $.get("/data")
     .done(function(data) {
-      searchData = data;
-      $("#campaign_name").autocomplete({
-        source: convertLabels(searchData)
-      });
+      if(data.statusCode == "200"){
+        searchData = data;
+        $("#campaign_name").autocomplete({
+          source: convertLabels(searchData)
+        });
+      }
+//      else {
+//        can_submit = false;
+//        alert("Couldn't load data. Please check your internet connection");
+//      }
     })
     .fail(function(err) {
       alert("Please check your internet connection or contact the site admin.");
     });
 
-  var fields = ["name", "details", "start", "end", "uniqueId"];
+  var fields = ["name", "type", "details", "start", "end", "uniqueId", "brand_name", "channel_type"];
   var is_submitting = false;
   var can_submit = true;
   $("#campaign_uniqueDiv").hide();
@@ -26,6 +69,8 @@ $(document).ready(function() {
       fields.forEach(function(ele, id) {
         formData[parent_ele_id + ele] = $("#" + parent_ele_id + ele).val();
       });
+
+      formData['got_file'] = gotFile;
       submitForm(formData);
     } else if (value === "") {
       fields.forEach(function(ele, id) {
@@ -38,37 +83,48 @@ $(document).ready(function() {
     changeMonth: true,
     changeYear: true,
     dateFormat: "yy-mm-dd",
-    yearRange: "-1:"
+    yearRange: "-2:"
   });
 
   function submitForm(formData) {
-    if (formData !== undefined) {
-      if (validateData() && can_submit) {
-        $("#campaign_uniqueDiv").hide();
-        var progressbar = $("#progress-bar");
-        progressbar.progressbar({ value: false });
-        $.post("/", formData).done(function(data) {
-          if (data.statusCode === "400") {
-            is_submitting = false;
-            progressbar.progressbar("destroy");
-            alert(
-              "Sorry, the submission failed. Please contact the site admin"
-            );
-            setTimeout(function() {
-              location.reload();
-            }, 3000);
-          } else {
-            is_submitting = false;
-            progressbar.progressbar("destroy");
-            alert("The form submission was successful");
-            $("#campaign_uniqueDiv").show();
-            $("#campaign_uniqueId").val(data.uniqueId);
-          }
-        });
-      } else {
-        $("#campaign_uniqueDiv").hide();
-        is_submitting = false;
+    var r = confirm("Do you with to submit file and details?");
+    if (r == true) {      
+      if (formData !== undefined) {
+        if (validateData() && can_submit) {
+          $("#campaign_uniqueDiv").hide();
+          var progressbar = $("#progress-bar");
+          progressbar.progressbar({ value: false });
+          $.post("/", formData).done(function(data) {
+            if (data.statusCode == "400") {
+              is_submitting = false;
+              progressbar.progressbar("destroy");
+              alert(
+                "Sorry, the submission failed. Please contact the site admin"
+              );
+              // setTimeout(function() {
+              //   location.reload();
+              // }, 3000);
+            } else {
+              is_submitting = false;
+              progressbar.progressbar("destroy");                            
+
+              if(data.rowInserted)
+                alert("The form submission was successful \nSuccessfully inserted " + data.rowInserted + " records at table ");                
+              else
+                alert("The form submission was successful");
+                              
+              $("#campaign_uniqueDiv").show();
+              $("#campaign_uniqueId").val(data.uniqueId);
+            }
+          });
+        } else {
+          $("#campaign_uniqueDiv").hide();
+          is_submitting = false;
+        }
       }
+    }
+    else{
+
     }
   }
 
@@ -133,10 +189,7 @@ $(document).ready(function() {
     var start_date = new Date($("#campaign_start").val());
     var end_date = new Date($("#campaign_end").val());
     var today = new Date();
-    if (today < start_date) {
-      alert("Campaign's start date can't be today or in the future!");
-      return false;
-    } else if (end_date < start_date) {
+    if (end_date < start_date) {
       alert("Campaign's end date can't be before the start date!");
       return false;
     }
