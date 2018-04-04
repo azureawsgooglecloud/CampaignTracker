@@ -73,7 +73,7 @@ button[disabled]{
 }
 
 #campaign_uniqueId {
-	width: 100%;
+	width: 20%;
 }
 
 .inline-buttons div {
@@ -90,4 +90,8 @@ button[disabled]{
 
 #help-text {
 	color: #fff;
+}
+
+.dropdowns-inline div select{
+	width: 100%;
 }
